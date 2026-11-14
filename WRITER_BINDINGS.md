@@ -67,6 +67,8 @@ Verified in libzim 9.8.2 source:
 
 ## Step 0: agree the API upstream first
 
+> **Status: drafted ✅ — `UPSTREAM_ISSUE.md`. Not posted; awaiting the user's go-ahead.**
+
 Before coding much, open an issue on `kiwix/java-libkiwix`. Title: *"Add bindings for the libzim writer (zim::writer::Creator)"*. Include:
 - the use case (Kotlin desktop apps writing ZIMs; no JVM writer exists);
 - the proposed Java API below;
@@ -123,26 +125,26 @@ Design notes:
 
 ## Implementation steps
 
-1. **Fork and branches.**
+1. ✅ **Fork and branches.** _(Done: fork `pomofomo/java-libkiwix`, PR branch `feature/writer-bindings` from upstream `379e3f0`.)_
    - Fork `kiwix/java-libkiwix` to the user's account (`pomofomo/java-libkiwix`; ask if different).
    - Branches:
      - `main` mirrors upstream.
      - `feature/writer-bindings` is the upstream PR branch, cut from upstream `main` at `379e3f0` or later.
      - `wyz` = `feature/writer-bindings` + wyz-only publishing changes.
    - **Never put wyz-specific changes on the PR branch.**
-2. **Set up the build.**
+2. ✅ **Set up the build.** _(Done. Baseline before any change: `./gradlew buildHeaders build` OK incl. Android lint and AAR, `runTests` **OK (24 tests)**. Notes: the build needs a UTF-8 locale (`LC_ALL=C.UTF-8`) and a full JDK 17 (CMake `FindJNI` needs the AWT headers).)_
    - Run `./install_deps.sh`, then `./gradlew buildHeaders build runTests`.
    - Confirm the existing tests pass before changing anything, and record the result.
-3. **Java classes.** Create the classes above under `lib/src/main/java/org/kiwix/libzim/writer/`, with the GPL header, Javadoc covering threading and the unfinished-close behaviour, and the `nativeHandle` and `dispose` pattern.
-4. **JNI headers.** Add the new files to `getLibzimFiles()` in `lib/build.gradle` (or a new `getLibzimWriterFiles()` included in `buildHeaders`).
-5. **C++.**
+3. ✅ **Java classes.** Create the classes above under `lib/src/main/java/org/kiwix/libzim/writer/`, with the GPL header, Javadoc covering threading and the unfinished-close behaviour, and the `nativeHandle` and `dispose` pattern.
+4. ✅ **JNI headers.** _(New `getLibzimWriterFiles()`.)_ Add the new files to `getLibzimFiles()` in `lib/build.gradle` (or a new `getLibzimWriterFiles()` included in `buildHeaders`).
+5. ✅ **C++.** _(Plus `writer/item.cpp` for `Item.dispose()` and `writer/writer_utils.h` with the hints conversion and `CATCH_WRITER_EXCEPTION`; `jbytes2string` added to `utils.h`.)_
    - Add `lib/src/main/cpp/libzim/writer/creator.cpp`, `string_item.cpp` and `file_item.cpp`, using `macros.h` and `utils.h`. `TYPENAME` follows the JNI name mangling, e.g. `libzim_writer_Creator`.
    - Keep `shared_ptr<zim::writer::Item>` handles so `addItem` can pass them straight through.
    - Convert the hints map to `zim::writer::Hints`.
    - Use UTF-8 byte arrays for strings (see the pitfall above).
    - Map writer exceptions.
-6. **CMake.** Add the new `.cpp` files to `zim_wrapper`. Writer headers come from the same libzim include dir; check that `zim/writer/*.h` is in the prebuilt tarball.
-7. **Tests.** Add `lib/src/test/org/kiwix/test/libzim/TestCreator.java`. Each test writes into a temp dir, then reopens the result with the existing `Archive` reader:
+6. ✅ **CMake.** _(Finding: the libzim **Android** prebuilts are built with `LIBZIM_WITHOUT_WRITER`: no `zim/writer/*.h`, no writer symbols. The writer `.cpp` files are therefore compiled for Linux only, against the Linux headers copied to `build/include/libzim_linux`.)_ Add the new `.cpp` files to `zim_wrapper`. Writer headers come from the same libzim include dir; check that `zim/writer/*.h` is in the prebuilt tarball.
+7. ✅ **Tests.** _(14 tests, all pass: `runTests` **OK (38 tests)**. zimcheck: Ubuntu's zimcheck uses libzim 8.2.1, which rejects every libzim 9 ZIM (format 6.3 has no v0 title index), so the test skips when zimcheck's libzim < 9; all other zimcheck checks pass. Libzim's own `Archive.check()` is asserted instead.)_ Add `lib/src/test/org/kiwix/test/libzim/TestCreator.java`. Each test writes into a temp dir, then reopens the result with the existing `Archive` reader:
    - Creates a ZIM with a main page, several `text/html` `StringItem`s, a `FileItem` (PNG/WebP), a redirection and an alias. All are readable through `Archive`/`Entry`/`Item`, with the right mimetypes and content bytes.
    - Metadata round-trip: standard keys plus custom `X-Pack-Format`, `X-Pack-Themes` and `X-Pack-Sources` (a JSON string), all read back via `getMetadata` and listed by `getMetadataKeys`.
    - Illustration 48×48 round-trip via `getIllustrationItem(48)`.
@@ -152,9 +154,9 @@ Design notes:
    - Abort: `close()` without `finishZimCreation()` leaves neither `path` nor `path.tmp`.
    - Errors: adding a duplicate path, calling after finish, or config after start each throw the documented exception without crashing the JVM.
    - Optional: if `zimcheck` is on PATH, run `zimcheck -A` on the output and assert exit code 0; skip otherwise.
-8. **Android.** Make sure `./gradlew build` still produces the AAR with the new classes, and the Android ABIs link (`writer/*.cpp` compiled into `libzim_wrapper.so`). Don't add Android-only tests unless upstream has them.
-9. **Docs.** Add a "Create a ZIM file" section to `README.md` with a short Kotlin example, and a `CHANGELOG` entry in the existing format.
-10. **Hygiene.** Follow `checkstyle.xml`, keep the C++ style of the neighbouring files, and make no unrelated reformatting. Each commit should build.
+8. ✅ **Android.** _(AAR builds for the 4 ABIs and contains the writer classes; Android libs unchanged since libzim has no writer there.)_ Make sure `./gradlew build` still produces the AAR with the new classes, and the Android ABIs link (`writer/*.cpp` compiled into `libzim_wrapper.so`). Don't add Android-only tests unless upstream has them.
+9. ✅ **Docs.** Add a "Create a ZIM file" section to `README.md` with a short Kotlin example, and a `CHANGELOG` entry in the existing format.
+10. ✅ **Hygiene.** Follow `checkstyle.xml`, keep the C++ style of the neighbouring files, and make no unrelated reformatting. Each commit should build.
 
 ## Publishing for wyz (branch `wyz` only)
 
@@ -173,16 +175,16 @@ Prepare the PR from `feature/writer-bindings` against `kiwix/java-libkiwix:main`
 - list the tests;
 - note that it's tested on Linux JVM and that the Android ABIs build.
 
-Draft the PR text into `UPSTREAM_PR.md` and **ask the user before opening it**. After opening, respond to review on that branch, then rebase `wyz` onto it.
+Draft the PR text into `UPSTREAM_PR.md` and **ask the user before opening it**. _(Status: drafted ✅ — `UPSTREAM_PR.md`, not opened.)_ After opening, respond to review on that branch, then rebase `wyz` onto it.
 
 When upstream releases a version with the writer, switch wyz back to `org.kiwix:libkiwix:<that version>` and archive the fork's `wyz` branch.
 
 ## Definition of done
 
-- [ ] Existing tests still pass; new `TestCreator` tests pass on Linux JVM; AAR builds for all ABIs.
-- [ ] A ZIM written by the bindings opens in the stock reader (`Archive`), and ideally passes `zimcheck -A`.
-- [ ] An unfinished or failed creation leaves no files; no JVM crash on any error path.
-- [ ] Unicode round-trip test passes.
-- [ ] `UPSTREAM_ISSUE.md` and `UPSTREAM_PR.md` drafted; posted only after the user approves.
+- [x] Existing tests still pass; new `TestCreator` tests pass on Linux JVM; AAR builds for all ABIs.
+- [x] A ZIM written by the bindings opens in the stock reader (`Archive`), and ideally passes `zimcheck -A`. _(Reader + `Archive.check()` yes; `zimcheck -A` only checkable with a libzim ≥ 9 zimcheck, see step 7.)_
+- [x] An unfinished or failed creation leaves no files; no JVM crash on any error path.
+- [x] Unicode round-trip test passes.
+- [ ] `UPSTREAM_ISSUE.md` and `UPSTREAM_PR.md` drafted; posted only after the user approves. _(Drafted ✅; not posted.)_
 - [ ] `wyz` branch publishes `io.github.pomofomo:libkiwix-wyz:2.7.0-wyz.1` (or the agreed coordinates), including a Linux x86_64 JVM jar with natives.
 - [ ] Short report back: what was built, test results, open questions for maintainers, and the exact Gradle coordinates for wyz.
