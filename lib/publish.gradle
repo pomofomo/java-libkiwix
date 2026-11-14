@@ -42,8 +42,42 @@ afterEvaluate {
                     }
                 }
             }
+            // wyz fork: desktop JVM jar (see jvm.gradle)
+            jvm(MavenPublication) {
+                groupId GROUP_ID
+                artifactId "${ARTIFACT_ID}-jvm"
+                version VERSION
+
+                artifact tasks.named('jvmJar')
+                artifact tasks.named('jvmSourcesJar')
+
+                pom {
+                    name = "${ARTIFACT_ID}-jvm"
+                    description = 'libzim reader and writer bindings for the desktop JVM (Linux x86_64), wyz fork of java-libkiwix'
+                    url = 'https://github.com/pomofomo/java-libkiwix'
+                    licenses {
+                        license {
+                            name = 'GPLv3'
+                            url = 'https://www.gnu.org/licenses/gpl-3.0.en.html'
+                        }
+                    }
+                    scm {
+                        connection = 'https://github.com/pomofomo/java-libkiwix.git'
+                        url = 'https://github.com/pomofomo/java-libkiwix'
+                    }
+                }
+            }
         }
         repositories {
+            // wyz fork: the fork's GitHub Packages Maven repository
+            maven {
+                name = "GitHubPackages"
+                url = uri("https://maven.pkg.github.com/pomofomo/java-libkiwix")
+                credentials {
+                    username = System.getenv("GITHUB_ACTOR")
+                    password = System.getenv("GITHUB_TOKEN")
+                }
+            }
             maven {
                 url = uri("https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/")
                 credentials {
@@ -56,6 +90,8 @@ afterEvaluate {
 }
 
 signing {
+    // wyz fork: GitHub Packages does not need signed artifacts
+    required { keyId != null }
     useInMemoryPgpKeys(
             keyId,
             key,

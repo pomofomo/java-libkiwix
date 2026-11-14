@@ -16,16 +16,20 @@ ext["sonatypeUsername"] = properties.getProperty("sonatypeUsername", System.gete
 ext["sonatypePassword"] = properties.getProperty("sonatypePassword", System.getenv('SONATYPE_PASSWORD'))
 ext["sonatypeStagingProfileId"] = properties.getProperty("sonatypeStagingProfileId", System.getenv('SONATYPE_STAGING_PROFILE_ID'))
 
+// wyz fork: published under our own coordinates so it cannot be confused
+// with the official org.kiwix:libkiwix artifact.
+// Version: <upstream version>-wyz.<n>
 ext {
-    set("GROUP_ID", "org.kiwix")
-    set("ARTIFACT_ID", "libkiwix")
-    set("VERSION", "2.7.0")
+    set("GROUP_ID", "io.github.pomofomo")
+    set("ARTIFACT_ID", "libkiwix-wyz")
+    set("VERSION", "2.7.0-wyz.1")
 }
 
 // Replace these versions with the latest available versions of libkiwix and libzim
 ext.libkiwix_version = "14.2.1"
 ext.libzim_version = "9.8.2"
 
+apply from: 'jvm.gradle'
 apply from: 'publish.gradle'
 android {
     compileSdk 34
