@@ -368,6 +368,22 @@ inline typename CType<jobjectArray, U>::type_t jni2c(const jobjectArray& val, JN
 
 #define TO_C(VAL) jni2c(VAL, env)
 
+// Convert a java byte array to a std::string, keeping the bytes as they are.
+// Use it to receive (standard) UTF-8 strings encoded on the java side with
+// `String.getBytes(StandardCharsets.UTF_8)`: unlike `jni2c<jstring>` (which
+// uses the *modified* UTF-8 of `GetStringUTFChars`), it correctly handles NUL
+// and characters outside of the BMP.
+inline std::string jbytes2string(const jbyteArray& val, JNIEnv* env)
+{
+  jsize length = env->GetArrayLength(val);
+  std::string ret(length, '\0');
+  if (length > 0) {
+    env->GetByteArrayRegion(val, 0, length, reinterpret_cast<jbyte*>(&ret[0]));
+  }
+  return ret;
+}
+#define BYTES_TO_C(VAL) jbytes2string(VAL, env)
+
 /* Method to deal with variable passed by reference */
 inline std::string getStringObjValue(const jobject obj, JNIEnv* env)
 {

@@ -60,6 +60,22 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
                 ${JNI_INCLUDE_DIRS}
         )
 
+        # The libzim writer (zim::writer::Creator) is only available in the
+        # Linux build of libzim: the Android prebuilts are compiled without it
+        # (LIBZIM_WITHOUT_WRITER), and their headers do not include it.
+        target_include_directories(zim_wrapper
+                BEFORE PRIVATE
+                ${BUILD_DIR_PATH}/include/libzim_linux
+        )
+
+        target_sources(zim_wrapper
+                PRIVATE
+                libzim/writer/creator.cpp
+                libzim/writer/item.cpp
+                libzim/writer/string_item.cpp
+                libzim/writer/file_item.cpp
+        )
+
         add_library(libzim SHARED IMPORTED)
         set_target_properties(libzim PROPERTIES IMPORTED_LOCATION libzim.so)
 

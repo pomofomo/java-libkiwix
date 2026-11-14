@@ -174,6 +174,13 @@ tasks.register('copyLibzimHeaderAndSoFiles', Copy) {
     }
 
     copy {
+        // copying linux_x86_64 header files. Unlike the Android ones, they
+        // include the libzim writer (zim/writer/*.h).
+        from buildDir.path + "/libzim_linux-x86_64/include/"
+        into buildDir.path + "/include/libzim_linux/"
+    }
+
+    copy {
         // copying linux_x86_64 so file
         from buildDir.path + "/libzim_linux-x86_64/lib/x86_64-linux-gnu/libzim.so." + getActualLibraryVersion(libzim_version)
         into buildDir.path
@@ -324,7 +331,7 @@ tasks.register('runTests', JavaExec) {
     dependsOn compileTestFile
     classpath = files("$buildDir", 'src/test/java/', 'src/test/junit-4.13.jar', 'src/test/hamcrest-core-1.3.jar')
     mainClass = 'org.junit.runner.JUnitCore'
-    args = ['test']
+    args = ['test', 'org.kiwix.test.libzim.TestCreator']
     jvmArgs = [
             '-Djava.library.path=' + buildDir.path,
             '-javaagent:jacoco-0.8.7/lib/jacocoagent.jar=destfile=../../build/jacoco/jacoco.exec'
@@ -352,7 +359,7 @@ tasks.register('checkCurrentJavaVersion') {
 
 tasks.register('buildHeaders', Exec) {
     workingDir "${projectDir}/src/main/java/org/kiwix/"
-    commandLine 'bash', '-c', "javac -h ${buildDir}/include/javah_generated/ -d ${projectDir}/src/test/java/ ${getLibzimFiles()} ${getLibkiwixFiles()}"
+    commandLine 'bash', '-c', "javac -h ${buildDir}/include/javah_generated/ -d ${projectDir}/src/test/java/ ${getLibzimFiles()} ${getLibzimWriterFiles()} ${getLibkiwixFiles()}"
 }
 
 String getLibkiwixFiles() {
@@ -389,6 +396,18 @@ String getLibzimFiles() {
         "${projectDir}/src/main/java/org/kiwix/libzim/FdInput.java " +
         "${projectDir}/src/main/java/org/kiwix/libzim/IllustrationInfo.java " +
         "${projectDir}/src/main/java/org/kiwix/libzim/OpenConfig.java"
+}
+
+String getLibzimWriterFiles() {
+    return "${projectDir}/src/main/java/org/kiwix/libzim/writer/Compression.java " +
+        "${projectDir}/src/main/java/org/kiwix/libzim/writer/Creator.java " +
+        "${projectDir}/src/main/java/org/kiwix/libzim/writer/CreatorStateException.java " +
+        "${projectDir}/src/main/java/org/kiwix/libzim/writer/FileItem.java " +
+        "${projectDir}/src/main/java/org/kiwix/libzim/writer/Hint.java " +
+        "${projectDir}/src/main/java/org/kiwix/libzim/writer/InvalidEntryException.java " +
+        "${projectDir}/src/main/java/org/kiwix/libzim/writer/Item.java " +
+        "${projectDir}/src/main/java/org/kiwix/libzim/writer/StringItem.java " +
+        "${projectDir}/src/main/java/org/kiwix/libzim/writer/ZimCreatorException.java"
 }
 
 tasks.register('buildLinuxBinding', Exec) {
