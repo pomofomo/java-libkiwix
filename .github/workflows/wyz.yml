@@ -1,16 +1,26 @@
 # wyz fork only: build, test and publish io.github.pomofomo:libkiwix-wyz(-jvm)
 # to this fork's GitHub Packages.
-# Publishing runs on tags named "v<VERSION>", e.g. v2.7.0-wyz.1 (must match
-# VERSION in lib/build.gradle).
+# Build and tests run on pull requests and pushes. Publishing runs either on
+# a tag named "v<VERSION>" (e.g. v2.7.0-wyz.1, must match VERSION in
+# lib/build.gradle), or from Actions > wyz > "Run workflow" with
+# "publish" checked. A version can only be published once: bump VERSION first.
 name: wyz
 
 on:
+  pull_request:
   push:
     branches:
+      - main
       - wyz
+      - feature/writer-bindings
     tags:
       - 'v*-wyz.*'
   workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publish VERSION (lib/build.gradle) to GitHub Packages'
+        type: boolean
+        default: false
 
 jobs:
   build:
@@ -52,7 +62,7 @@ jobs:
           fi
 
       - name: Publish to GitHub Packages
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/') || inputs.publish
         run: ./gradlew publishAllPublicationsToGitHubPackagesRepository --max-workers 1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,14 +1,16 @@
 # wyz build of java-libkiwix
 
-This `wyz` branch is `feature/writer-bindings` (the upstream PR adding the libzim
-writer bindings) plus fork-only publishing changes. It is used by wyz until
+The fork-only publishing changes (coordinates, desktop JVM jar, GitHub Packages)
+are in one commit ("wyz: publish …") on top of the libzim writer bindings; drop
+it from any branch proposed upstream. It is used by wyz until
 upstream releases the writer bindings; then wyz switches back to
 `org.kiwix:libkiwix:<that version>` and this branch is archived.
 
 ## Artifacts
 
-Published to this fork's GitHub Packages by `.github/workflows/wyz.yml` when a
-`v<VERSION>` tag (e.g. `v2.7.0-wyz.1`) is pushed:
+Published to this fork's GitHub Packages by `.github/workflows/wyz.yml`, either
+from GitHub: Actions > wyz > Run workflow (branch `main`, tick "publish"), or
+when a `v<VERSION>` tag (e.g. `v2.7.0-wyz.1`) is pushed:
 
 | Coordinates | Content |
 | --- | --- |
@@ -16,7 +18,7 @@ Published to this fork's GitHub Packages by `.github/workflows/wyz.yml` when a
 | `io.github.pomofomo:libkiwix-wyz:2.7.0-wyz.1` | The Android AAR (same as upstream plus the writer classes, which are not usable on Android: libzim for Android has no writer) |
 
 Version scheme: `<upstream version>-wyz.<n>`. Bump `VERSION` in
-`lib/build.gradle`, commit, then tag `v<VERSION>`.
+`lib/build.gradle`, commit, then publish (a version can only be published once).
 
 ## Using it from wyz (Gradle Kotlin DSL)
 

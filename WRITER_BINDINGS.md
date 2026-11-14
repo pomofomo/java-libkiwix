@@ -160,11 +160,11 @@ Design notes:
 
 ## Publishing for wyz (branch `wyz` only)
 
-> **Status: prepared ✅, not yet pushed or published (needs the user's go-ahead).** Branch `wyz` = this branch + one commit:
+> **Status: on `feature/writer-bindings` ✅ (the user chose to keep everything on the fork's PR #1 for now; drop the "wyz: publish" commit for upstream). Not yet published:** one commit adds
 > coordinates `io.github.pomofomo:libkiwix-wyz` (AAR) and `io.github.pomofomo:libkiwix-wyz-jvm` (desktop jar), version `2.7.0-wyz.1`;
 > `lib/jvm.gradle` builds the desktop jar with the Linux x86_64 natives and `io.github.pomofomo.libkiwix.NativeLoader`;
 > `testJvmJar` smoke-tests it with only the jar on the classpath (passes); both publications publish to a local Maven repo;
-> `.github/workflows/wyz.yml` builds/tests on push to `wyz` and publishes to GitHub Packages on `v*-wyz.*` tags. See `WYZ.md` on that branch.
+> `.github/workflows/wyz.yml` builds/tests on PRs and pushes, and publishes to GitHub Packages on `v*-wyz.*` tags or a manual run with `publish` ticked. See `WYZ.md`.
 > CI for `feature/writer-bindings`: `ci.yml` only runs on `pull_request` and pushes to `main`, so it runs once a PR (e.g. a draft PR into the fork's `main`) is opened.
 
 - **Coordinates:** publish under a group ID we control so it can't be confused with the official artifact, e.g. `io.github.pomofomo:libkiwix-wyz`. Use version `<upstream version>-wyz.<n>`, e.g. `2.7.0-wyz.1`. Use the existing `lib/publish.gradle` with overridden `GROUP_ID`, `ARTIFACT_ID` and `VERSION`, and publish to the fork's GitHub Packages Maven repo (wyz consumes it with a read-only token). If the user prefers, attach the AAR/JAR to a GitHub Release instead.
@@ -193,5 +193,5 @@ When upstream releases a version with the writer, switch wyz back to `org.kiwix:
 - [x] An unfinished or failed creation leaves no files; no JVM crash on any error path.
 - [x] Unicode round-trip test passes.
 - [ ] `UPSTREAM_ISSUE.md` and `UPSTREAM_PR.md` drafted; posted only after the user approves. _(Drafted ✅; not posted.)_
-- [ ] `wyz` branch publishes `io.github.pomofomo:libkiwix-wyz:2.7.0-wyz.1` (or the agreed coordinates), including a Linux x86_64 JVM jar with natives. _(Branch ready and verified locally; publishing needs the branch pushed and the `v2.7.0-wyz.1` tag.)_
+- [ ] `wyz` branch publishes `io.github.pomofomo:libkiwix-wyz:2.7.0-wyz.1` (or the agreed coordinates), including a Linux x86_64 JVM jar with natives. _(Verified locally; publish from Actions > wyz > Run workflow once PR #1 is merged, as tags can't be pushed from the Claude session.)_
 - [ ] Short report back: what was built, test results, open questions for maintainers, and the exact Gradle coordinates for wyz.
