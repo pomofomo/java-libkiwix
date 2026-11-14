@@ -22,6 +22,9 @@ Version scheme: `<upstream version>-wyz.<n>`. Bump `VERSION` in
 
 ## Using it from wyz (Gradle Kotlin DSL)
 
+The full guide to hand to the app (setup, API reference, errors, threading,
+ZIM conventions, reader limitations) is [`WYZ_INTEGRATION.md`](WYZ_INTEGRATION.md).
+
 ```kotlin
 repositories {
     maven {
