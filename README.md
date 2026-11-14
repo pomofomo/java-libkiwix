@@ -113,6 +113,45 @@ as `Libzim` does not support encoded URLs.
     }
 ```
 
+### Create a ZIM file
+
+The `org.kiwix.libzim.writer` package wraps the libzim writer
+(`zim::writer::Creator`). It is only available on the Linux (desktop)
+JVM: the libzim binaries for Android are built without the writer.
+
+```kotlin
+Creator().use { creator ->
+    creator.configIndexing(true, "eng") // full text and title indexes, ISO 639-3 language
+        .configClusterSize(2L * 1024 * 1024)
+        .configNbWorkers(4)
+    // libzim writes to "my.zim.tmp", renamed to "my.zim" by finishZimCreation()
+    creator.startZimCreation("my.zim")
+
+    creator.addMetadata("Title", "My ZIM")
+    creator.addMetadata("Language", "eng")
+    creator.addMetadata("X-Custom", "{\"key\":\"value\"}".toByteArray(), "application/json")
+    creator.addIllustration(48, File("logo-48.png").readBytes())
+
+    val front = mapOf(Hint.FRONT_ARTICLE to 1L)
+    creator.addItem(StringItem("index.html", "text/html", "Home", front, "<html>…</html>"))
+    creator.addItem(FileItem("images/diagram.webp", "image/webp", "", null, "/path/to/diagram.webp"))
+    creator.addRedirection("home.html", "Home", "index.html")
+    creator.setMainPath("index.html")
+
+    creator.finishZimCreation()
+}
+```
+
+If the block exits before `finishZimCreation()` (for example because of an
+exception), closing the `Creator` aborts the creation: libzim removes the
+temporary file and no ZIM file is left behind.
+
+Errors are reported as `ZimCreatorException` (or its subclasses
+`InvalidEntryException` and `CreatorStateException`). libzim compresses
+and indexes in worker threads, so an error there is thrown by a later
+call, at the latest by `finishZimCreation()`. A `Creator` must be used
+from a single thread at a time.
+
 # License
 
 [GPLv3](https://www.gnu.org/licenses/gpl-3.0) or later, see

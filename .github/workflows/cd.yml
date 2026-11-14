@@ -6,6 +6,8 @@ on:
 
 jobs:
   publish:
+    # wyz fork: only the upstream repository publishes to Maven Central.
+    if: github.repository == 'kiwix/java-libkiwix'
     runs-on: ubuntu-22.04
 
     steps:

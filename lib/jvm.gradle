@@ -1,0 +1,63 @@
+// wyz fork only: a plain desktop JVM jar of the libzim bindings (reader and
+// writer), bundling the Linux x86_64 native libraries, published as
+// "${GROUP_ID}:${ARTIFACT_ID}-jvm:${VERSION}".
+// Load the natives with io.github.pomofomo.libkiwix.NativeLoader.load().
+
+def jvmClassesDir = file("${rootProject.buildDir}/wyz-jvm/classes")
+
+tasks.register('compileJvmJava', JavaCompile) {
+    source = fileTree('src/main/java') { include 'org/kiwix/libzim/**/*.java' } +
+             fileTree('src/jvm/java') { include '**/*.java' }
+    classpath = files()
+    destinationDirectory = jvmClassesDir
+    options.release = 8
+    options.encoding = 'UTF-8'
+}
+
+tasks.register('jvmJar', Jar) {
+    dependsOn compileJvmJava, buildLinuxBinding
+    archiveBaseName = "${ARTIFACT_ID}-jvm"
+    archiveVersion = VERSION
+    destinationDirectory = file("${rootProject.buildDir}/wyz-jvm/libs")
+    from jvmClassesDir
+    // libzim_wrapper.so needs "libzim.so.9" (libzim's SONAME).
+    from("$buildDir/libzim.so") {
+        into 'native/linux-x86_64'
+        rename { 'libzim.so.9' }
+    }
+    from("$buildDir/libzim_wrapper.so") {
+        into 'native/linux-x86_64'
+    }
+    from(rootProject.file('COPYING')) {
+        into 'META-INF'
+    }
+    manifest {
+        attributes('Implementation-Title': "${ARTIFACT_ID}-jvm",
+                   'Implementation-Version': VERSION,
+                   'libzim-Version': libzim_version)
+    }
+}
+
+tasks.register('jvmSourcesJar', Jar) {
+    archiveBaseName = "${ARTIFACT_ID}-jvm"
+    archiveVersion = VERSION
+    archiveClassifier = 'sources'
+    destinationDirectory = file("${rootProject.buildDir}/wyz-jvm/libs")
+    from fileTree('src/main/java') { include 'org/kiwix/libzim/**/*.java' }
+    from fileTree('src/jvm/java')
+}
+
+tasks.register('compileJvmSmokeTest', JavaCompile) {
+    dependsOn jvmJar
+    source = fileTree('src/jvm/test') { include '**/*.java' }
+    classpath = files(tasks.named('jvmJar').flatMap { it.archiveFile })
+    destinationDirectory = file("${rootProject.buildDir}/wyz-jvm/test-classes")
+    options.encoding = 'UTF-8'
+}
+
+// Runs with the jar alone on the classpath, and no java.library.path.
+tasks.register('testJvmJar', JavaExec) {
+    dependsOn compileJvmSmokeTest
+    classpath = files(tasks.named('jvmJar').flatMap { it.archiveFile }, "${rootProject.buildDir}/wyz-jvm/test-classes")
+    mainClass = 'JvmJarSmokeTest'
+}
